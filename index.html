@@ -2,9 +2,31 @@
 
 <html>
 	<head>
+		<style>
+			* {
+				padding: 0;
+				margin: 0;
+			}
+			.sidebar {
+				display: inline-block;
+				vertical-align: top;
+			}
+		</style>
 	</head>
 	<body>
-		<canvas width="320" height="480"></canvas>
+		<canvas width="400" height="400"></canvas>
+		<div class="sidebar">
+			<div class="user_id">You: {{ user_id }} ({{ user_email }})</div>
+			<div class="player1"></div>
+			<div class="player2"></div>
+		</div>
+		<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 		<script type="text/javascript" src="/scripts/game.js"></script>
+		<script>
+			channel = new goog.appengine.Channel('{{ token }}');
+			socket = channel.open();
+			socket.onopen = onOpened;
+			socket.onmessage = onMessage;
+		</script>
 	</body>
 </html>

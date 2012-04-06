@@ -1,35 +1,17 @@
 var canvas = document.querySelector('canvas');
 var context = canvas.getContext('2d');
-var interval;
+var game;
 
 canvas.addEventListener('click', function(event) {
-	var unitSelected = false;
-
-	units.forEach(function(unit) {
-		if (unit.intersectsDot(event.offsetX, event.offsetY)) {
-			unit.selected = true;
-			unitSelected = true;
-			return 1;
-		}
-	});
-
-	if (!unitSelected) {
-		units.forEach(function(unit) {
-			if (unit.selected) {
-				unit.target.x = event.offsetX;
-				unit.target.y = event.offsetY;
-				unit.selected = false;
-			}
-		});
-	}
+	game.onMouseClick(event.clientX, event.clientY);
 });
 
-var Entity = function(startX, startY) {
+var Entity = function(startX, startY, color) {
 	this.x = startX || 0;
 	this.y = startY || 0;
+	this.color = color || 'red';
 	this.radius = 10;
 	this.selected = false;
-	this.kills = 0;
 
 	this.target = {
 		x: startX,
@@ -63,7 +45,7 @@ var Entity = function(startX, startY) {
 	};
 
 	this.render = function() {
-		context.fillStyle = 'red';
+		context.fillStyle = this.color;
 		context.beginPath();
 		context.arc(this.x, this.y, this.radius, 0, Math.PI*2, true);
 		context.closePath();
@@ -85,42 +67,111 @@ var Entity = function(startX, startY) {
 	};
 }
 
-var units = [
-	new Entity(20, 20),
-	new Entity(60, 20),
-	new Entity(100, 20),
-	new Entity(140, 20)
-];
+var Game = function() {
+	this.player1 = '';
+	this.player2 = '';
+	this.units = [];
+	this.state = 'ingame';
+	this.interval;
+	this.initialized = false;
 
-function update() {
-	units.forEach(function(unit) {
-		unit.update();
-	});
-}
-
-function render() {
-	context.fillStyle = 'black';
-	context.fillRect(0, 0, canvas.width, canvas.height);
-
-	units.forEach(function(unit) {
-		unit.render();
-	});
-}
-
-function start() {
-	interval = setInterval(function() {
-		try {
-			update();
-			render();
-		} catch (e) {
-			pause();
-			throw e;
+	this.initState = function(state) {
+		var i;
+		var unit;
+		for (i = 0; i < state.units.length; i += 1) {
+			unit = state.units[i];
+			this.units.push(new Entity(unit.x, unit.y, unit.color));
 		}
-	}, 16);
+		this.initialized = true;
+	};
+
+	this.updateState = function(state) {
+		var i;
+		var unit;
+		for (i = 0; i < state.units.length; i += 1) {
+			this.units[i].target.x = state.units[i].target.x;
+			this.units[i].target.y = state.units[i].target.y;
+		}
+	}
+
+	this.onMouseClick = function(x, y) {
+		var unitSelected = false;
+		var i;
+		var unit;
+
+		for (i = 0; i < this.units.length; i += 1) {
+			unit = this.units[i];
+			if (unit.intersectsDot(x, y)) {
+				unit.selected = true;
+				unitSelected = true;
+				break;
+			}
+		}
+
+		if (!unitSelected) {
+			for (i = 0; i < this.units.length; i += 1) {
+				unit = this.units[i];
+				if (unit.selected) {
+					var params = 'x=' + x + '&y=' + y;
+					var xhr = new XMLHttpRequest();
+					xhr.open('POST', '/units/' + i + '/move');
+					xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+					xhr.send(params);
+					unit.selected = false;
+				}
+			}
+		}
+	};
+
+	this.update = function() {
+		this.units.forEach(function(unit) {
+			unit.update();
+		});
+	};
+
+	this.render = function() {
+		context.fillStyle = 'black';
+		context.fillRect(0, 0, canvas.width, canvas.height);
+
+		this.units.forEach(function(unit) {
+			unit.render();
+		});
+	};
+
+	this.start = function() {
+		self = this;
+		self.interval = setInterval(function() {
+			try {
+				self.update();
+				self.render();
+			} catch (e) {
+				self.pause();
+				throw e;
+			}
+		}, 16);
+	};
+
+	this.pause = function() {
+		clearInterval(this.interval);
+	};
 }
 
-function pause() {
-	clearInterval(interval);
-}
+game = new Game();
+game.start();
 
-start();
+onOpened = function() {
+	var xhr = new XMLHttpRequest();
+	xhr.open('POST', 'opened', true);
+	xhr.send();
+};
+
+onMessage = function(message) {
+	var json = JSON.parse(message.data);
+	document.querySelector('.sidebar .player1').innerHTML = 'Player 1: ' + json.player1;
+	document.querySelector('.sidebar .player2').innerHTML = 'Player 2: ' + json.player2;
+	if (game.initialized) {
+		game.updateState(json.state);
+	} else {
+		game.initState(json.state);
+	}
+}
