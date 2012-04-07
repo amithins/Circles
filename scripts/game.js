@@ -101,7 +101,7 @@ var Game = function() {
 
 		for (i = 0; i < this.units.length; i += 1) {
 			unit = this.units[i];
-			if (unit.intersectsDot(x, y)) {
+			if (unit.intersectsDot(x, y) && unit.color === team) {
 				unit.selected = true;
 				unitSelected = true;
 				break;
@@ -165,10 +165,20 @@ onOpened = function() {
 	xhr.send();
 };
 
+var team = undefined;
+
 onMessage = function(message) {
 	var json = JSON.parse(message.data);
+
 	document.querySelector('.sidebar .player1').innerHTML = 'Player 1: ' + json.player1;
 	document.querySelector('.sidebar .player2').innerHTML = 'Player 2: ' + json.player2;
+
+	if (my_nickname === json.player1) {
+		team = 'red';
+	} else {
+		team = 'blue';
+	}
+
 	if (game.initialized) {
 		game.updateState(json.state);
 	} else {

@@ -11,15 +11,23 @@
 				display: inline-block;
 				vertical-align: top;
 			}
+			.sidebar .player1 {
+				color: red;
+			}
+			.sidebar .player2 {
+				color: blue;
+			}
 		</style>
 	</head>
 	<body>
 		<canvas width="400" height="400"></canvas>
 		<div class="sidebar">
-			<div class="user_id">You: {{ user_id }} ({{ user_email }})</div>
 			<div class="player1"></div>
 			<div class="player2"></div>
 		</div>
+		<script>
+			my_nickname = "{{ nickname }}";
+		</script>
 		<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 		<script type="text/javascript" src="/scripts/game.js"></script>
 		<script>

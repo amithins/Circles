@@ -103,8 +103,7 @@ class MainHandler(webapp.RequestHandler):
 
         self.response.out.write(template.render('index.html', {
             'token': token,
-            'user_id': user.user_id(),
-            'user_email': user.email(),
+            'nickname': user.nickname(),
         }))
 
 def main():
