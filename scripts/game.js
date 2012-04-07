@@ -1,5 +1,6 @@
 var canvas = document.querySelector('canvas');
 var context = canvas.getContext('2d');
+var team;
 var game;
 
 canvas.addEventListener('click', function(event) {
@@ -164,8 +165,6 @@ onOpened = function() {
 	xhr.open('POST', 'opened', true);
 	xhr.send();
 };
-
-var team = undefined;
 
 onMessage = function(message) {
 	var json = JSON.parse(message.data);
