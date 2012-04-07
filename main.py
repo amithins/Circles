@@ -6,6 +6,8 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp import util
 from django.utils import simplejson
 
+games = {}
+
 class Game:
 
     def __init__(self):
@@ -51,40 +53,23 @@ class Game:
             channel.send_message(self.player1.user_id(), json)
         if (self.player2):
             channel.send_message(self.player2.user_id(), json)
-game = Game()
 
-class MoveHandler(webapp.RequestHandler):
+class GamesHandler(webapp.RequestHandler):
 
-    def post(self, index):
-        index = int(index)
-        game.state['units'][index]['target']['x'] = int(self.request.get('x'))
-        game.state['units'][index]['target']['y'] = int(self.request.get('y'))
-        game.send_state_to_clients()
+    def get(self, game_name):
+        global games
 
-class StateHandler(webapp.RequestHandler):
-
-    def get(self):
-        self.response.headers['Content-Type'] = 'application/json'
-        self.response.out.write(game.export_to_json())
-
-class OpenedHandler(webapp.RequestHandler):
-
-    def post(self):
-        game.send_state_to_clients()
-
-class FlushHandler(webapp.RequestHandler):
-
-    def post(self):
-        global game
-        game = None
-
-class MainHandler(webapp.RequestHandler):
-
-    def get(self):
         user = users.get_current_user()
         if not user:
             self.redirect(users.create_login_url(self.request.uri))
             return
+
+        if not game_name in games:
+            self.error(404)
+            self.response.out.write('Could not find game "%s"' % game_name)
+            return
+
+        game = games[game_name]
 
         if game.player1 is None:
             game.player1 = user
@@ -101,17 +86,58 @@ class MainHandler(webapp.RequestHandler):
 
         token = channel.create_channel(user.user_id())
 
-        self.response.out.write(template.render('index.html', {
+        self.response.out.write(template.render('ingame.html', {
             'token': token,
+            'nickname': user.nickname(),
+        }))
+
+    def post(self):
+        """ Create a new game """
+        global games
+        user = users.get_current_user()
+        game = Game()
+        game.player1 = user
+        games[self.request.get('game_name')] = game
+
+class MoveHandler(webapp.RequestHandler):
+
+    def post(self, game_name, unit_index):
+        """ Set target position for a unit  """
+        global games
+
+        unit_index = int(unit_index)
+        game = games[game_name]
+
+        game.state['units'][unit_index]['target']['x'] = int(self.request.get('x'))
+        game.state['units'][unit_index]['target']['y'] = int(self.request.get('y'))
+
+        game.send_state_to_clients()
+
+class OpenedHandler(webapp.RequestHandler):
+
+    def post(self, game_name):
+        global games
+        game = games[game_name]
+        game.send_state_to_clients()
+
+class MainHandler(webapp.RequestHandler):
+
+    def get(self):
+        user = users.get_current_user()
+        if not user:
+            self.redirect(users.create_login_url(self.request.uri))
+            return
+
+        self.response.out.write(template.render('index.html', {
             'nickname': user.nickname(),
         }))
 
 def main():
     application = webapp.WSGIApplication([
-        ('/units/(.*)/move', MoveHandler),
-        ('/opened', OpenedHandler),
-        ('/flush', FlushHandler),
-        ('/state', StateHandler),
+        ('/games/(.*)/units/(.*)/move', MoveHandler),
+        ('/games/(.*)/opened', OpenedHandler),
+        ('/games/(.*)', GamesHandler),
+        ('/games', GamesHandler),
         ('/.*', MainHandler),
     ], debug=True)
     util.run_wsgi_app(application)

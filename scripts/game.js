@@ -115,8 +115,8 @@ var Game = function() {
 				if (unit.selected) {
 					var params = 'x=' + x + '&y=' + y;
 					var xhr = new XMLHttpRequest();
-					xhr.open('POST', '/units/' + i + '/move');
-					xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+					xhr.open('POST', '/games/' + location.href.split('games/')[1] + '/units/' + i + '/move');
+					xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 					xhr.send(params);
 					unit.selected = false;
 				}
@@ -162,7 +162,7 @@ game.start();
 
 onOpened = function() {
 	var xhr = new XMLHttpRequest();
-	xhr.open('POST', 'opened', true);
+	xhr.open('POST', '/games/' + location.href.split('games/')[1] + '/opened');
 	xhr.send();
 };
 

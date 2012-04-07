@@ -2,39 +2,37 @@
 
 <html>
 	<head>
-		<style>
-			* {
-				padding: 0;
-				margin: 0;
-			}
-			.sidebar {
-				display: inline-block;
-				vertical-align: top;
-			}
-			.sidebar .player1 {
-				color: red;
-			}
-			.sidebar .player2 {
-				color: blue;
-			}
-		</style>
 	</head>
 	<body>
-		<canvas width="400" height="400"></canvas>
-		<div class="sidebar">
-			<div class="player1"></div>
-			<div class="player2"></div>
-		</div>
+		<button class="create">Create Game</button>
+		<button class="join">Join Game</button>
+
 		<script>
-			my_nickname = "{{ nickname }}";
-		</script>
-		<script type="text/javascript" src="/_ah/channel/jsapi"></script>
-		<script type="text/javascript" src="/scripts/game.js"></script>
-		<script>
-			channel = new goog.appengine.Channel('{{ token }}');
-			socket = channel.open();
-			socket.onopen = onOpened;
-			socket.onmessage = onMessage;
+			document.querySelector("button.create").onclick = function() {
+				var name = prompt("Game name?");
+				if (name) {
+					var xhr = new XMLHttpRequest();
+					xhr.open('POST', '/games');
+					xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+					xhr.send('game_name=' + name);
+
+					xhr.onreadystatechange = function() {
+						if (xhr.readyState == 4) {
+							if (xhr.status == 200) {
+								location.href = '/games/' + name;
+							} else {
+								alert('Error creating game: ' + xhr.responseText);
+							}
+						}
+					};
+				}
+			};
+			document.querySelector("button.join").onclick = function() {
+				var name = prompt("Game name?");
+				if (name) {
+					location.href = '/games/' + name;
+				}
+			};
 		</script>
 	</body>
 </html>
