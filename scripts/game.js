@@ -95,8 +95,17 @@ var Game = function() {
 		}
 	}
 
+	this.deselectAllUnitsExcept = function(exception) {
+		var i;
+
+		for (i = 0; i < this.units.length; i += 1) {
+			if (i !== exception) {
+				this.units[i].selected = false;
+			}
+		}
+	};
+
 	this.onMouseClick = function(x, y) {
-		var unitSelected = false;
 		var i;
 		var unit;
 
@@ -104,22 +113,19 @@ var Game = function() {
 			unit = this.units[i];
 			if (unit.intersectsDot(x, y) && unit.color === team) {
 				unit.selected = true;
-				unitSelected = true;
-				break;
+				this.deselectAllUnitsExcept(i);
+				return;
 			}
 		}
 
-		if (!unitSelected) {
-			for (i = 0; i < this.units.length; i += 1) {
-				unit = this.units[i];
-				if (unit.selected) {
-					var params = 'x=' + x + '&y=' + y;
-					var xhr = new XMLHttpRequest();
-					xhr.open('POST', '/games/' + location.href.split('games/')[1] + '/units/' + i + '/move');
-					xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-					xhr.send(params);
-					unit.selected = false;
-				}
+		for (i = 0; i < this.units.length; i += 1) {
+			unit = this.units[i];
+			if (unit.selected) {
+				var params = 'x=' + x + '&y=' + y;
+				var xhr = new XMLHttpRequest();
+				xhr.open('POST', '/games/' + location.href.split('games/')[1] + '/units/' + i + '/move');
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send(params);
 			}
 		}
 	};
