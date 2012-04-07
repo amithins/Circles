@@ -13,6 +13,7 @@ var Entity = function(startX, startY, color) {
 	this.color = color || 'red';
 	this.radius = 10;
 	this.selected = false;
+	this.standingStill = true;
 
 	this.target = {
 		x: startX,
@@ -22,6 +23,7 @@ var Entity = function(startX, startY, color) {
 	this.update = function() {
 		var xDist = Math.abs(this.target.x - this.x);
 		var yDist = Math.abs(this.target.y - this.y);
+		this.standingStill = (xDist === 0 && yDist === 0);
 		var d = 50 * (16/1000);
 
 		if (xDist < 1) {
@@ -41,6 +43,20 @@ var Entity = function(startX, startY, color) {
 				this.y += d;
 			} else if (this.y > this.target.y) {
 				this.y -= d;
+			}
+		}
+
+		if (!this.standingStill && this.color === team) {
+			var i;
+			var other;
+			for (i = 0; i < game.units.length; i += 1) {
+				other = game.units[i];
+				if (other.standingStill && other.color != this.color && !other.markedAsDead && this.intersectsCircle(other)) {
+					other.markedAsDead = true;
+					var xhr = new XMLHttpRequest();
+					xhr.open('POST', '/games/' + location.href.split('games/')[1] + '/units/' + i + '/kill');
+					xhr.send();
+				}
 			}
 		}
 	};
@@ -65,6 +81,15 @@ var Entity = function(startX, startY, color) {
 		var d = Math.sqrt((xDist * xDist) + (yDist * yDist));
 
 		return d < this.radius;
+	};
+
+	this.intersectsCircle = function(other) {
+		var xDist = Math.abs(other.x - this.x);
+		var yDist = Math.abs(other.y - this.y);
+
+		var d = Math.sqrt((xDist * xDist) + (yDist * yDist));
+
+		return d < (this.radius + other.radius);
 	};
 }
 
@@ -92,6 +117,10 @@ var Game = function() {
 		for (i = 0; i < state.units.length; i += 1) {
 			this.units[i].target.x = state.units[i].target.x;
 			this.units[i].target.y = state.units[i].target.y;
+			if (this.units[i].color !== state.units[i].color) {
+				this.units[i].color = state.units[i].color;
+				this.units[i].markedAsDead = false;
+			}
 		}
 	}
 

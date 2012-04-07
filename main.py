@@ -113,6 +113,21 @@ class MoveHandler(webapp.RequestHandler):
 
         game.send_state_to_clients()
 
+class KillHandler(webapp.RequestHandler):
+
+    def post(self, game_name, unit_index):
+        """ Set target position for a unit  """
+        global games
+        game = games[game_name]
+
+        user = users.get_current_user()
+        new_color = 'red' if user.user_id() == game.player1.user_id() else 'blue'
+
+        unit_index = int(unit_index)
+        game.state['units'][unit_index]['color'] = new_color
+
+        game.send_state_to_clients()
+
 class OpenedHandler(webapp.RequestHandler):
 
     def post(self, game_name):
@@ -135,6 +150,7 @@ class MainHandler(webapp.RequestHandler):
 def main():
     application = webapp.WSGIApplication([
         ('/games/(.*)/units/(.*)/move', MoveHandler),
+        ('/games/(.*)/units/(.*)/kill', KillHandler),
         ('/games/(.*)/opened', OpenedHandler),
         ('/games/(.*)', GamesHandler),
         ('/games', GamesHandler),
