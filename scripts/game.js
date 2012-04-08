@@ -97,7 +97,7 @@ var Game = function() {
 	this.player1 = '';
 	this.player2 = '';
 	this.units = [];
-	this.state = 'ingame';
+	this.state = 'waiting'; // waiting, ingame
 	this.interval;
 	this.initialized = false;
 
@@ -160,18 +160,37 @@ var Game = function() {
 	};
 
 	this.update = function() {
-		this.units.forEach(function(unit) {
-			unit.update();
-		});
+		switch (this.state) {
+			case 'waiting':
+			break;
+
+			case 'ingame':
+			this.units.forEach(function(unit) {
+				unit.update();
+			});
+			break;
+		}
 	};
 
 	this.render = function() {
 		context.fillStyle = 'black';
 		context.fillRect(0, 0, canvas.width, canvas.height);
 
-		this.units.forEach(function(unit) {
-			unit.render();
-		});
+		switch (this.state) {
+			case 'waiting':
+			context.font = '30px Arial';
+			context.textAlign = 'center';
+			context.textBaseline = 'middle';
+			context.fillStyle = 'white';
+			context.fillText('Waiting for other player', 200, 200);
+			break;
+
+			case 'ingame':
+			this.units.forEach(function(unit) {
+				unit.render();
+			});
+			break;
+		}
 	};
 
 	this.start = function() {
@@ -206,6 +225,10 @@ onMessage = function(message) {
 
 	document.querySelector('.sidebar .player1').innerHTML = 'Player 1: ' + json.player1;
 	document.querySelector('.sidebar .player2').innerHTML = 'Player 2: ' + json.player2;
+
+	if (json.player1 && json.player2) {
+		game.state = 'ingame';
+	}
 
 	if (my_nickname === json.player1) {
 		team = 'red';
