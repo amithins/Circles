@@ -6,7 +6,6 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext.webapp import util
 from django.utils import simplejson
 
-#comment
 
 games = {}
 
