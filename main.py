@@ -8,7 +8,6 @@ from django.utils import simplejson
 
 games = {}
 
-#comment
 
 class Game:
 
